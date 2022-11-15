@@ -7,4 +7,4 @@
 5. Create a `.env` file and add the `DATABASE_URL` environment variable.
     - The `.env.example` file is provided as reference.
 
-5. Start the project: `python3 relay.py`
+5. Start the project: `python3 main.py`

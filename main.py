@@ -11,7 +11,7 @@ MESSAGES_API = os.getenv('MESSAGES_API')
 TEXT_COMPLETION_API = os.getenv('TEXT_COMPLETION_API')
 API2_TOKEN = os.getenv('API2_TOKEN')
 
-def send_new_message_response():
+def send_new_message_response(request):
     api1_headers = {
         "Content-Type": "application/json",
     }
@@ -90,3 +90,6 @@ def send_new_message_response():
         print("Exception occured", e)
         mydb.disconnect()
         return(500)
+
+
+send_new_message_response("request")
