@@ -26,8 +26,7 @@ def send_new_message_response(request):
         mycursor = mydb.cursor()
         
         api1_response = requests.get(url = MESSAGES_API).json()
-        new_messages = [p for p in api1_response if "message_response" in p]
-
+        new_messages = [p for p in api1_response if len(p["message_response"])  <= 1]
         completed_new_message = []
         for new_message in new_messages:
 
@@ -73,7 +72,7 @@ def send_new_message_response(request):
             mycursor.execute(insert_script, val)
             mydb.commit()
 
-        if len(completed_new_message) > 0:
+        if completed_new_message:
             message_post_response = requests.post(
                 url = MESSAGES_API, 
                 data = json.dumps(completed_new_message), 
@@ -85,11 +84,9 @@ def send_new_message_response(request):
                 return(500)
 
         mydb.disconnect()
+        return(200)
 
     except Exception as e:
         print("Exception occured", e)
         mydb.disconnect()
         return(500)
-
-
-send_new_message_response("request")
