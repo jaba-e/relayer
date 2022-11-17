@@ -9,8 +9,8 @@
 
 5. Start the project: `python3 main.py`
 
-## Infra explanation.
+## Infra explanation
 
 1. Script is deployed on CLOUD FUNCTION.
 2. CLOUD SCHEDULER triggers CLOUD FUNCTION every minute.
-3. Script save API1, API2 data to CLOUD SQL and returns completed data.
+3. Script saves API1, API2 data to CLOUD SQL and returns completed data.
