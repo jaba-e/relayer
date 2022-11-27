@@ -1,9 +1,9 @@
 import os
 import json
 import requests
-from pathlib import Path
 from database.connect import connectDB 
 from dotenv import load_dotenv
+import sqlalchemy
 
 load_dotenv()
 
@@ -23,21 +23,14 @@ def send_new_message_response(request):
 
     try:
         mydb = connectDB()
-        mycursor = mydb.cursor()
         
         api1_response = requests.get(url = MESSAGES_API).json()
         new_messages = [p for p in api1_response if len(p["message_response"])  <= 1]
         completed_new_message = []
-        for new_message in new_messages:
+        for new_message in api1_response:
 
-            insert_script = "INSERT INTO api1_response (msg_id, message, sender) VALUES (%s, %s, %s)"
-            val = (
-                new_message["msg_id"], 
-                new_message["message"], 
-                new_message["sender"]
-            )
-            mycursor.execute(insert_script, val)
-            mydb.commit()
+            api1_insert_script = sqlalchemy.text('insert into api1_response (msg_id, message, sender) values ("{}", "{}", "{}")'.format(new_message['msg_id'], new_message['message'], new_message['sender']))
+            mydb.execute(api1_insert_script)
 
             api2_data = {
                 "model" : "text-davinci-002",
@@ -61,16 +54,9 @@ def send_new_message_response(request):
             }
 
             completed_new_message.append(new_message_data)
+            api2_insert_script = sqlalchemy.text('insert into api2_response (msg_id, choices_text) values ("{}", "{}")'.format(new_message['msg_id'], clean_choices_text))
 
-            insert_script = "INSERT INTO api2_response (msg_id, choices_text, api_response) VALUES (%s, %s, %s)"
-            val = (
-                new_message["msg_id"], 
-                clean_choices_text, 
-                json.dumps(text_completion_response)
-            )
-
-            mycursor.execute(insert_script, val)
-            mydb.commit()
+            mydb.execute(api2_insert_script)
 
         if completed_new_message:
             message_post_response = requests.post(
@@ -83,10 +69,12 @@ def send_new_message_response(request):
             else:
                 return(500)
 
-        mydb.disconnect()
+        mydb.close()
         return(200)
 
     except Exception as e:
         print("Exception occured", e)
-        mydb.disconnect()
         return(500)
+
+
+send_new_message_response("s")
