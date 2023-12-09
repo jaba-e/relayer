@@ -6,11 +6,10 @@ This is a script for answering chatbot prompts using chatgpt text-davinci-002 mo
 1. Create virtual environment: `python3 -m venv env`
 2. Activate virtual environment: `source env/bin/activate`
 3. Install packages: `pip3 install -r requirements.txt`
-4. Start a MySql database with docker using: `docker-compose up -d`.
-5. Create a `.env` file and add the `DATABASE_URL` environment variable.
-    - The `.env.example` file is provided as reference.
-
-5. Start the project: `python3 main.py`
+4. Create a `.env` file. `cp .env.example .env` and update the necessary variables.
+5. Create a mysql DB. `docker compose up -d`
+6. Create tables: `python3 database/create.py`
+7. Run the script: `python3 main.py`
 
 ## How infrastructure works
 

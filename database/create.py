@@ -1,5 +1,4 @@
-from connect import connectDB
-import sqlalchemy
+from connect import connect_db
 
 TABLES = {}
 TABLES['custom_chatbot_response'] = (
@@ -20,8 +19,8 @@ TABLES['chatgpt_response'] = (
     ") ENGINE=InnoDB")
 
 
-def createTable():
-    mydb = connectDB()
+def create_table():
+    mydb = connect_db()
 
     try:
         for table_name in TABLES:
@@ -36,4 +35,4 @@ def createTable():
         exit(1)
 
 if __name__ == "__main__":
-    createTable()
+    create_table()

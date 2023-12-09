@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def connectDB():
+def connect_db():
     try: 
         db = sqlalchemy.create_engine(
           sqlalchemy.engine.url.URL(
@@ -14,7 +14,6 @@ def connectDB():
             username=os.getenv('DB_USER'),
             password=os.getenv('DB_PASSWORD'),
             database=os.getenv('DB_NAME'),
-            # query=dict({"unix_socket": "/cloudsql/{}".format('project-api-database:us-central1:relayer-db')}),
           ),
           pool_size=5,
           max_overflow=2,
@@ -27,5 +26,4 @@ def connectDB():
     except Exception as err:
         print("Failed connecting database: {}".format(err))
 
-
-
+connect_db()

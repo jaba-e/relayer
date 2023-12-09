@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from database.connect import connectDB 
+from database.connect import connect_db 
 from dotenv import load_dotenv
 import sqlalchemy
 
@@ -9,7 +9,7 @@ load_dotenv()
 PENDING_PROMPT_LENGTH = 1
 SUCCESS_RESPONSE = "Response has been created"
 
-def answer_prompts(request):
+def answer_prompts():
     try:
         prompts = requests.get(url = os.getenv('CUSTOM_CHATBOT_API')).json()
         pending_prompts = [p for p in prompts if len(p["message_response"]) <= PENDING_PROMPT_LENGTH]
@@ -59,7 +59,7 @@ def ask_chatgpt(prompt):
 
 def insert_data(pending_prompt, chatgpt_answer):
     try:
-        db = connectDB()
+        db = connect_db()
         db.execute(sqlalchemy.text(
             'insert into custom_chatbot_response (msg_id, message, sender) values ("{}", "{}", "{}")'
             .format(pending_prompt['msg_id'], pending_prompt['message'], pending_prompt['sender'])))
@@ -96,3 +96,6 @@ def get_header(api=None):
     if api == "OPENAI":
         headers['Authorization'] = f"Bearer {os.getenv('OPENAI_TOKEN')}"
     return headers
+
+if __name__ == "__main__":
+    answer_prompts()
