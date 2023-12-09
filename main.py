@@ -1,92 +1,98 @@
 import os
 import json
 import requests
-from pathlib import Path
 from database.connect import connectDB 
 from dotenv import load_dotenv
+import sqlalchemy
 
 load_dotenv()
+PENDING_PROMPT_LENGTH = 1
+SUCCESS_RESPONSE = "Response has been created"
 
-MESSAGES_API = os.getenv('MESSAGES_API')
-TEXT_COMPLETION_API = os.getenv('TEXT_COMPLETION_API')
-API2_TOKEN = os.getenv('API2_TOKEN')
-
-def send_new_message_response(request):
-    api1_headers = {
-        "Content-Type": "application/json",
-    }
-
-    api2_headers = {
-        "Content-Type": "application/json",
-        'Authorization': f"Bearer {API2_TOKEN}"
-    }
-
+def answer_prompts(request):
     try:
-        mydb = connectDB()
-        mycursor = mydb.cursor()
-        
-        api1_response = requests.get(url = MESSAGES_API).json()
-        new_messages = [p for p in api1_response if len(p["message_response"])  <= 1]
-        completed_new_message = []
-        for new_message in new_messages:
+        prompts = requests.get(url = os.getenv('CUSTOM_CHATBOT_API')).json()
+        pending_prompts = [p for p in prompts if len(p["message_response"]) <= PENDING_PROMPT_LENGTH]
+        answers = []
 
-            insert_script = "INSERT INTO api1_response (msg_id, message, sender) VALUES (%s, %s, %s)"
-            val = (
-                new_message["msg_id"], 
-                new_message["message"], 
-                new_message["sender"]
-            )
-            mycursor.execute(insert_script, val)
-            mydb.commit()
-
-            api2_data = {
-                "model" : "text-davinci-002",
-                "prompt": new_message["message"],
-                "max_tokens": 2000,
-                "temperature": 0, # Later set to 100.
-            }
-
-            text_completion_response = requests.post(
-                url = TEXT_COMPLETION_API, 
-                data = json.dumps(api2_data), 
-                headers=api2_headers).json()
-
-            clean_choices_text = text_completion_response["choices"][0]["text"].replace("\n", "") # Getting only first element. Later we can add more.
-
-            new_message_data = {
-                "msg_id": new_message["msg_id"],
-                "message": new_message["message"],
-                "sender": new_message["sender"],
-                "message_response": clean_choices_text 
-            }
-
-            completed_new_message.append(new_message_data)
-
-            insert_script = "INSERT INTO api2_response (msg_id, choices_text, api_response) VALUES (%s, %s, %s)"
-            val = (
-                new_message["msg_id"], 
-                clean_choices_text, 
-                json.dumps(text_completion_response)
-            )
-
-            mycursor.execute(insert_script, val)
-            mydb.commit()
-
-        if completed_new_message:
-            message_post_response = requests.post(
-                url = MESSAGES_API, 
-                data = json.dumps(completed_new_message), 
-                headers=api1_headers).json()
-
-            if message_post_response == "Response has been created":
-                return(200)
-            else:
+        for pending_prompt in pending_prompts:
+            chatgpt_answer = ask_chatgpt(pending_prompt['message'])
+            if not chatgpt_answer:
+                return(500)
+            
+            if not insert_data(pending_prompt, chatgpt_answer):
                 return(500)
 
-        mydb.disconnect()
-        return(200)
+            answer = {
+                "msg_id": pending_prompt["msg_id"],
+                "message": pending_prompt["message"],
+                "sender": pending_prompt["sender"],
+                "message_response": chatgpt_answer 
+            }
+            answers.append(answer)
+
+        response_code=send_answers(answers)
+        return(response_code)
 
     except Exception as e:
-        print("Exception occured", e)
-        mydb.disconnect()
+        print("Exception occurred", e)
         return(500)
+
+def ask_chatgpt(prompt):
+    try:
+        chatgpt_input = {
+            "model" : "text-davinci-002",
+            "prompt": prompt,
+            "max_tokens": os.getenv('MAX_TOKENS'),
+            "temperature": os.getenv('TEMPERATURE'),
+        }
+
+        chatgpt_response = requests.post(
+            url = os.getenv('OPENAI_API'),
+            headers=get_header('OPENAI'),
+            data = json.dumps(chatgpt_input)).json()
+        
+        return chatgpt_response["choices"][0]["text"].replace("\n", "") # Since chatgpt makes multiple suggestions, only taking first one.
+    
+    except Exception as e:
+        print("Error occurred:", e)
+
+def insert_data(pending_prompt, chatgpt_answer):
+    try:
+        db = connectDB()
+        db.execute(sqlalchemy.text(
+            'insert into custom_chatbot_response (msg_id, message, sender) values ("{}", "{}", "{}")'
+            .format(pending_prompt['msg_id'], pending_prompt['message'], pending_prompt['sender'])))
+        
+        db.execute(sqlalchemy.text(
+            'insert into chatgpt_response (msg_id, choices_text) values ("{}", "{}")'
+            .format(pending_prompt['msg_id'], chatgpt_answer)))
+
+        db.close()
+        return 200
+    except Exception as e:
+        print("Error occurred:", e)
+        db.rollback()
+    finally:
+        db.close()
+
+def send_answers(answers):
+    try:
+        if not answers:
+            return 200
+        
+        custom_chatbot_response = requests.post(
+            url = os.getenv('CUSTOM_CHATBOT_API'),
+            headers=get_header(),
+            data = json.dumps(answers)).json()
+
+        return 200 if custom_chatbot_response == SUCCESS_RESPONSE else 500
+    except Exception as e:
+        print("Error occurred:", e)
+        return 500
+
+def get_header(api=None):
+    headers = {"Content-Type": "application/json"}
+    if api == "OPENAI":
+        headers['Authorization'] = f"Bearer {os.getenv('OPENAI_TOKEN')}"
+    return headers

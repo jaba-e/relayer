@@ -3,3 +3,5 @@ virtualenv==20.7.2
 pipenv==2021.5.29
 python-dotenv==0.21.0
 mysql-connector-python==8.0.31
+sqlalchemy==1.3.12
+PyMySQL==0.9.3
