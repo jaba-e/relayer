@@ -1,4 +1,7 @@
-## Installation
+## Introduction
+This is a script for answering chatbot prompts using chatgpt text-davinci-002 model.
+
+## Local setup
 
 1. Create virtual environment: `python3 -m venv env`
 2. Activate virtual environment: `source env/bin/activate`
@@ -9,8 +12,10 @@
 
 5. Start the project: `python3 main.py`
 
-## Infra explanation
+## How infrastructure works
+
+We use Google Cloud Platform.
 
 1. Script is deployed on CLOUD FUNCTION.
-2. CLOUD SCHEDULER triggers CLOUD FUNCTION every minute.
-3. Script saves API1, API2 data to CLOUD SQL and returns completed data.
+2. CLOUD SCHEDULER triggers the CLOUD FUNCTION every minute.
+3. Script saves CUSTOM_CHATBOT_API, OPENAI_API data to CLOUD SQL and send prompts answer to CUSTOM_CHATBOT_API.

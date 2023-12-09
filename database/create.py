@@ -2,8 +2,8 @@ from connect import connectDB
 import sqlalchemy
 
 TABLES = {}
-TABLES['api1_response'] = (
-    "CREATE TABLE `api1_response` ("
+TABLES['custom_chatbot_response'] = (
+    "CREATE TABLE `custom_chatbot_response` ("
     "  `msg_id` int UNIQUE NOT NULL,"
     "  `message` TEXT NOT NULL,"
     "  `sender` varchar(200) NOT NULL,"
@@ -11,11 +11,10 @@ TABLES['api1_response'] = (
     "  PRIMARY KEY (`msg_id`)"
     ") ENGINE=InnoDB")
 
-TABLES['api2_response'] = (
-    "CREATE TABLE `api2_response` ("
+TABLES['chatgpt_response'] = (
+    "CREATE TABLE `chatgpt_response` ("
     "  `msg_id` int UNIQUE NOT NULL,"
     "  `choices_text` TEXT NOT NULL,"
-    # "  `api_response` TEXT DEFAULT NULL,"
     "  `created_at` datetime NOT NULL DEFAULT NOW(),"
     "  PRIMARY KEY (`msg_id`)"
     ") ENGINE=InnoDB")
@@ -36,4 +35,5 @@ def createTable():
         print("Failed creating database: {}".format(err))
         exit(1)
 
-createTable()
+if __name__ == "__main__":
+    createTable()
